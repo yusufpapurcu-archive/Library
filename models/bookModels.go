@@ -2,8 +2,6 @@ package models
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"time"
 
 	u "github.com/yusufpapurcu/Library/utils"
@@ -28,41 +26,40 @@ type Book struct {
 	ModifiedAt      time.Time          `bson:"modifiedAt,omitempty" json:"modifiedAt,omitempty"` // ModifiedAt Book
 }
 
-func (book *Book) CreateBook(c string) (map[string]interface{}, bool) {
+func (book *Book) CreateBook(c string) map[string]interface{} {
 	user := &User{}
 	id, err := primitive.ObjectIDFromHex(c)
 	if err != nil {
-		fmt.Println("Line 45 : " + err.Error())
+		return u.Message(false, err.Error())
 	}
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second) // Context for Serach
 	err = database.GetDB("user").FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err != nil && err.Error() != "mongo: no documents in result" {
-		return u.Message(false, "Failed to create account, connection error."), false
+		return u.Message(false, "Failed to create account, connection error.")
 	}
 	book.SchoolTag = user.SchoolTag
 	temp := &Book{}
 	filter := bson.M{"no": book.No, "schooltag": book.SchoolTag}
 	//check for errors and duplicate emails
 	err = database.GetDB("book").FindOne(context.TODO(), filter).Decode(&temp)
-	fmt.Println(temp.ID.Hex())
 	if err != nil && err.Error() != "mongo: no documents in result" {
-		return u.Message(false, "Connection error. Please retry"), false
+		return u.Message(false, "Connection error. Please retry")
 	}
 	if temp.ID.Hex() == "000000000000000000000000" {
 		if user.Admin {
 			book.CreatedAt = time.Now()
-			book.CreatedAt = time.Now()
+			book.ModifiedAt = time.Now()
 			book.TimeLeft = time.Now()
 			ctx, _ := context.WithTimeout(context.Background(), 5*time.Second) // Context for Create function
 			_, err := database.GetDB("book").InsertOne(ctx, book)              // Create Function
 			if err != nil {
-				return u.Message(false, "Failed to book account, connection error."), false
+				return u.Message(false, "Failed to book account, connection error.")
 			}
-			return u.Message(true, "Book Succesfully Created."), true
+			return u.Message(true, "Book Succesfully Created.")
 		}
-		return u.Message(false, "Be Admin Please."), false
+		return u.Message(false, "Be Admin Please.")
 	}
-	return u.Message(false, "No already in use by another book."), false
+	return u.Message(false, "No already in use by another book.")
 }
 
 func (b Book) FindAllBook() map[string]interface{} {
@@ -80,17 +77,13 @@ func (b Book) FindAllBook() map[string]interface{} {
 	}
 	defer cur.Close(ctx) // Close cursor
 	var result Book      // Create Models.User for Decode result
-	var list []string    // Decoded and Transformed Json's String
+	var list []Book      // Decoded and Transformed Json's String
 	for cur.Next(ctx) {  // Loop all cursors
 		err := cur.Decode(&result) // Decode
 		if err != nil {
 			return u.Message(false, "Failed to Serach, Decode Error.")
 		}
-		out, err := json.Marshal(result) // Transform JSON
-		if err != nil {
-			return u.Message(false, "Failed to Serach, Convert JSON Error.")
-		}
-		list = append(list, string(out)) // Storage the string array
+		list = append(list, result) // Storage the string array
 	}
 	if err := cur.Err(); err != nil {
 		return u.Message(false, "Failed to Serach, Cursor error.")
@@ -100,12 +93,15 @@ func (b Book) FindAllBook() map[string]interface{} {
 	return msg
 }
 
-func GetBook(b interface{}) *Book {
+func GetBook(b string) *Book {
 
 	book := &Book{}
-	filtre := bson.D{{"_id", b}}
+	id, err := primitive.ObjectIDFromHex(b)
+	if err != nil {
+		return nil
+	}
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second) // Context for Serach
-	err := database.GetDB("book").FindOne(ctx, filtre).Decode(&book)
+	err = database.GetDB("book").FindOne(ctx, bson.M{"_id": id}).Decode(&book)
 	if err != nil {
 		return nil
 	}
@@ -121,5 +117,3 @@ func (book Book) Update() error {
 	}
 	return nil
 }
-
-// TODO : Update Yazilacak

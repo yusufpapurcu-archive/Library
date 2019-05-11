@@ -19,7 +19,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.Context().Value("user")
-	fmt.Println(id)
 	resp := user.Create(id) //Create account
 	u.Respond(w, resp)
 }
@@ -65,11 +64,16 @@ func FindUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	usra, err := models.GetUser(user.ID.Hex())
+	if err != nil {
+		u.Respond(w, u.Message(false, "Kullanici Bulunamadi"))
+		return
+	}
 	out, err := json.Marshal(&usra) // Convert the Json
 	if err != nil {
 		u.Respond(w, u.Message(false, "Json Convert Error."))
 		return
 	}
+	w.Header().Add("Content-Type", "application/json")
 	fmt.Fprint(w, string(out))
 }
 
@@ -80,7 +84,12 @@ func FindAllUser(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.Message(false, "Invalid request"))
 		return
 	}
-	out := user.FindAllUser()
-
-	fmt.Fprint(w, out)
+	res := user.FindAllUser()
+	out, err := json.Marshal(res) // Convert the Json
+	if err != nil {
+		u.Respond(w, u.Message(false, "Json Convert Error."))
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	fmt.Fprint(w, string(out))
 }

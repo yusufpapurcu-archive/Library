@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -40,11 +39,10 @@ func (user *User) Create(c interface{}) map[string]interface{} {
 	usra := &User{}
 	id, err := primitive.ObjectIDFromHex(c.(string))
 	if err != nil {
-		fmt.Println("Line 45 : " + err.Error())
+		return u.Message(false, err.Error())
 	}
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second) // Context for Serach
 	err = database.GetDB("user").FindOne(ctx, bson.M{"_id": id}).Decode(&usra)
-	fmt.Println(usra)
 	if err != nil && err.Error() != "mongo: no documents in result" {
 		return u.Message(false, "Failed to create account, connection error.")
 	}
@@ -113,12 +111,9 @@ func Login(email, password string, c []string) map[string]interface{} {
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second) // Context for Serach
 	err := database.GetDB("user").FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil && err.Error() != "mongo: no documents in result" {
-		fmt.Println(err)
 		return u.Message(false, "Connection error. Please retry")
 	}
-	fmt.Println(user)
 	if user.Email == "" {
-		fmt.Println(user)
 		return u.Message(false, "Email address not found")
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
@@ -172,7 +167,12 @@ func (user *User) Borrow(b *Book, c interface{}) map[string]interface{} {
 	if len(user.Delivery) >= 3 {
 		return u.Message(false, "Failed to borrow book, You can Borrow 3 Books Maksimum.")
 	}
-	b.User = *user
+	if b.User.ID.Hex() != "000000000000000000000000" {
+		return u.Message(false, "Failed to borrow book, This Book on the another User")
+	}
+	usr := user
+	usr.Delivery = []Book{}
+	b.User = *usr
 	err = b.Update()
 	if err != nil {
 		return u.Message(false, err.Error())
@@ -199,11 +199,24 @@ func (user *User) Deliver(book *Book, c interface{}) map[string]interface{} {
 	if !usra.Admin {
 		return u.Message(false, "Failed to borrow book, Please Be Admin.")
 	}
+	if len(user.Delivery) == 1 {
+		user.Delivery = nil
+		book.User = User{}
+		err = user.UpdateForDeliver()
+		if err != nil {
+			return u.Message(false, err.Error())
+		}
+		err = book.Update()
+		if err != nil {
+			return u.Message(false, err.Error())
+		}
+		return u.Message(true, "Deliver is Succesful.")
+	}
 	for i, b := range user.Delivery {
 		if b.ID == book.ID {
 			user.Delivery = append(user.Delivery[:i], user.Delivery[i+1:]...)
 			book.User = User{}
-			err = user.Update()
+			err = user.UpdateForDeliver()
 			if err != nil {
 				return u.Message(false, err.Error())
 			}
@@ -232,17 +245,14 @@ func (user User) FindAllUser() map[string]interface{} {
 	}
 	defer cur.Close(ctx) // Close cursor
 	var result User      // Create Models.User for Decode result
-	var list []string    // Decoded and Transformed Json's String
+	var list []User      // Decoded and Transformed Json's String
 	for cur.Next(ctx) {  // Loop all cursors
 		err := cur.Decode(&result) // Decode
 		if err != nil {
 			return u.Message(false, "Failed to Serach, Decode Error.")
 		}
-		out, err := json.Marshal(result) // Transform JSON
-		if err != nil {
-			return u.Message(false, "Failed to Serach, Convert JSON Error.")
-		}
-		list = append(list, string(out)) // Storage the string array
+
+		list = append(list, result) // Storage the string array
 	}
 	if err := cur.Err(); err != nil {
 		return u.Message(false, "Failed to Serach, Cursor error.")
@@ -253,6 +263,7 @@ func (user User) FindAllUser() map[string]interface{} {
 }
 
 func (user User) Update() error {
+	user.ModifiedAt = time.Now()
 	update := bson.M{"$set": user}
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)              // Context for Update function
 	_, err := database.GetDB("user").UpdateOne(ctx, bson.M{"_id": user.ID}, update) // Update Document
@@ -262,17 +273,13 @@ func (user User) Update() error {
 	return nil
 }
 
-// TODO : Update Yazilacak
-
-/*
-	usra := &User{}
-	filtre := bson.D{{"_id", c}}
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second) // Context for Serach
-	err := database.GetDB("user").FindOne(ctx, filtre).Decode(&usra)
-	if err != nil && err.Error() != "mongo: no documents in result" {
-		return u.Message(false, "Failed to create account, connection error.")
+func (user User) UpdateForDeliver() error {
+	user.ModifiedAt = time.Now()
+	update := bson.M{"$set": bson.M{"delivery": user.Delivery}}
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)              // Context for Update function
+	_, err := database.GetDB("user").UpdateOne(ctx, bson.M{"_id": user.ID}, update) // Update Document
+	if err != nil {
+		return err
 	}
-	if !usra.Admin {
-		return u.Message(false, "Failed to create account, Please Be Admin.")
-	}
-*/
+	return nil
+}

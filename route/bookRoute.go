@@ -17,14 +17,14 @@ func CreateBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.Context().Value("user")
-	fmt.Println(id)
-	out, ok := book.CreateBook(id.(string))
-	if !ok {
-		fmt.Fprint(w, out)
+	out := book.CreateBook(id.(string))
+	res, err := json.Marshal(out) // Convert the Json
+	if err != nil {
+		u.Respond(w, u.Message(false, "Json Convert Error."))
 		return
 	}
-	fmt.Fprint(w, out)
-	return
+	w.Header().Add("Content-Type", "application/json")
+	fmt.Fprint(w, string(res))
 }
 
 func FindBook(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +38,7 @@ func FindBook(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.Message(false, "Invalid request"))
 		return
 	}
-	booka := models.GetBook(book.ID)
+	booka := models.GetBook(book.ID.Hex())
 	if booka == nil {
 		fmt.Fprint(w, "Can't Find Anything")
 		return
@@ -48,6 +48,7 @@ func FindBook(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.Message(false, "Json Convert Error."))
 		return
 	}
+	w.Header().Add("Content-Type", "application/json")
 	fmt.Fprint(w, string(out))
 }
 
@@ -58,9 +59,14 @@ func FindAllBook(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.Message(false, "Invalid request"))
 		return
 	}
-	out := book.FindAllBook()
-
-	fmt.Fprint(w, out)
+	res := book.FindAllBook()
+	out, err := json.Marshal(res) // Convert the Json
+	if err != nil {
+		u.Respond(w, u.Message(false, "Json Convert Error."))
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	fmt.Fprint(w, string(out))
 }
 
 func Borrow(w http.ResponseWriter, r *http.Request) {
@@ -70,7 +76,7 @@ func Borrow(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.Message(false, "Invalid request"))
 		return
 	}
-	book := models.GetBook(ubid.BID)
+	book := models.GetBook(ubid.BID.Hex())
 	if book == nil {
 		fmt.Fprint(w, "Can't Find Book")
 		return
@@ -82,6 +88,7 @@ func Borrow(w http.ResponseWriter, r *http.Request) {
 	}
 	id := r.Context().Value("user")
 	out := user.Borrow(book, id)
+	w.Header().Add("Content-Type", "application/json")
 	fmt.Fprint(w, out)
 }
 
@@ -92,7 +99,7 @@ func Deliver(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.Message(false, "Invalid request"))
 		return
 	}
-	book := models.GetBook(ubid.BID)
+	book := models.GetBook(ubid.BID.Hex())
 	if book == nil {
 		fmt.Fprint(w, "Can't Find Book")
 		return
@@ -104,5 +111,6 @@ func Deliver(w http.ResponseWriter, r *http.Request) {
 	}
 	id := r.Context().Value("user")
 	out := user.Deliver(book, id)
+	w.Header().Add("Content-Type", "application/json")
 	fmt.Fprint(w, out)
 }

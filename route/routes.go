@@ -15,44 +15,44 @@ var routes = models.Routes{ //Route List
 		Path:        "/api/user/create",
 		Method:      "Post",
 		HandlerFunc: CreateUser,
-	}, // Duzenlemek gerekiyor Test Basarili
+	}, //Test Basarili
 	models.Route{
 		Name:        "Auth API",
 		Path:        "/api/user/auth",
 		Method:      "Post",
 		HandlerFunc: Auth,
-	}, // Duzenleme Yapildi. *Ufak Tefek sorunlari var*
+	}, // Test Basarili
 	models.Route{
 		Name:        "Find One User API",
 		Path:        "/api/user/getone",
 		Method:      "Post",
 		HandlerFunc: FindUser,
-	}, // Test edildi. Problem Yok
+	}, // Test Basarili
 	models.Route{
 		Name:        "Find All Users API",
 		Path:        "/api/user/getall",
 		Method:      "Post",
 		HandlerFunc: FindAllUser,
-	}, // Test Edildi Problem yok
+	}, // Test Basarili
 
 	models.Route{
 		Name:        "Create Book API",
 		Path:        "/api/book/create",
 		Method:      "Post",
 		HandlerFunc: CreateBook,
-	}, // Duzenleme Yapildi. *Ufak Tefek sorunlari var*
+	}, // Test Basarili
 	models.Route{
 		Name:        "Find One Book API",
 		Path:        "/api/book/getone",
 		Method:      "Post",
 		HandlerFunc: FindBook,
-	}, // Duzenleme Yapildi. *Ufak Tefek sorunlari var*
+	}, // Test Basarili
 	models.Route{
 		Name:        "Find All Books API",
 		Path:        "/api/book/getall",
 		Method:      "Post",
 		HandlerFunc: FindAllBook,
-	}, // Duzenleme Yapildi. *Ufak Tefek sorunlari var*
+	}, // Test Basarili
 	models.Route{
 		Name:        "Find One Book API",
 		Path:        "/api/book/borrow",
