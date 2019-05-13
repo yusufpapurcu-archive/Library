@@ -87,9 +87,14 @@ func Borrow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.Context().Value("user")
-	out := user.Borrow(book, id)
+	res := user.Borrow(book, id)
+	out, err := json.Marshal(res) // Convert the Json
+	if err != nil {
+		u.Respond(w, u.Message(false, "Json Convert Error."))
+		return
+	}
 	w.Header().Add("Content-Type", "application/json")
-	fmt.Fprint(w, out)
+	fmt.Fprint(w, string(out))
 }
 
 func Deliver(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +115,12 @@ func Deliver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.Context().Value("user")
-	out := user.Deliver(book, id)
+	res := user.Deliver(book, id)
+	out, err := json.Marshal(res) // Convert the Json
+	if err != nil {
+		u.Respond(w, u.Message(false, "Json Convert Error."))
+		return
+	}
 	w.Header().Add("Content-Type", "application/json")
-	fmt.Fprint(w, out)
+	fmt.Fprint(w, string(out))
 }

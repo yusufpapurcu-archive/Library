@@ -58,13 +58,13 @@ var routes = models.Routes{ //Route List
 		Path:        "/api/book/borrow",
 		Method:      "Post",
 		HandlerFunc: Borrow,
-	},
+	}, // Test Basarili
 	models.Route{
 		Name:        "Find All Books API",
 		Path:        "/api/book/deliver",
 		Method:      "Post",
 		HandlerFunc: Deliver,
-	},
+	}, // Test Basarili
 
 	models.Route{
 		Name:        "Index",

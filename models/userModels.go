@@ -152,6 +152,7 @@ func GetUser(u string) (*User, error) {
 
 func (user *User) Borrow(b *Book, c interface{}) map[string]interface{} {
 	usra := &User{}
+
 	id, err := primitive.ObjectIDFromHex(c.(string))
 	if err != nil {
 		return u.Message(false, "Invalid request")
@@ -170,9 +171,10 @@ func (user *User) Borrow(b *Book, c interface{}) map[string]interface{} {
 	if b.User.ID.Hex() != "000000000000000000000000" {
 		return u.Message(false, "Failed to borrow book, This Book on the another User")
 	}
-	usr := user
+	usr := *user
 	usr.Delivery = []Book{}
-	b.User = *usr
+	usr.Read = []Book{}
+	b.User = usr
 	err = b.Update()
 	if err != nil {
 		return u.Message(false, err.Error())
@@ -197,10 +199,11 @@ func (user *User) Deliver(book *Book, c interface{}) map[string]interface{} {
 		return nil
 	}
 	if !usra.Admin {
-		return u.Message(false, "Failed to borrow book, Please Be Admin.")
+		return u.Message(false, "Failed to deliver book, Please Be Admin.")
 	}
 	if len(user.Delivery) == 1 {
-		user.Delivery = nil
+		user.Read = append(user.Read, user.Delivery[0])
+		user.Delivery = []Book{}
 		book.User = User{}
 		err = user.UpdateForDeliver()
 		if err != nil {
@@ -214,6 +217,7 @@ func (user *User) Deliver(book *Book, c interface{}) map[string]interface{} {
 	}
 	for i, b := range user.Delivery {
 		if b.ID == book.ID {
+			user.Read = append(user.Read, user.Delivery[i])
 			user.Delivery = append(user.Delivery[:i], user.Delivery[i+1:]...)
 			book.User = User{}
 			err = user.UpdateForDeliver()
@@ -227,7 +231,7 @@ func (user *User) Deliver(book *Book, c interface{}) map[string]interface{} {
 			return u.Message(true, "Deliver is Succesful.")
 		}
 	}
-	return u.Message(false, "Failed to borrow book, This User Haven't This book.")
+	return u.Message(false, "Failed to deliver book, This User Haven't This book.")
 }
 
 func (user User) FindAllUser() map[string]interface{} {
@@ -275,7 +279,7 @@ func (user User) Update() error {
 
 func (user User) UpdateForDeliver() error {
 	user.ModifiedAt = time.Now()
-	update := bson.M{"$set": bson.M{"delivery": user.Delivery}}
+	update := bson.M{"$set": bson.M{"delivery": user.Delivery, "read": user.Read}}
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)              // Context for Update function
 	_, err := database.GetDB("user").UpdateOne(ctx, bson.M{"_id": user.ID}, update) // Update Document
 	if err != nil {
