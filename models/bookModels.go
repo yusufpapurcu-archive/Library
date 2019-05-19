@@ -21,7 +21,7 @@ type Book struct {
 	TimeLeft        time.Time          `bson:"timeleft,omitempty" json:"timeleft,omitempty"`       // Timeleft Book
 	User            User               `bson:"user,omitempty" json:"user,omitempty"`
 	No              int                `bson:"no,omitempty" json:"no,omitempty"`
-	SchoolTag       []string           `bson:"schooltag,omitempty" json:"schooltag,omitempty"`   // User School Tag
+	SchoolTag       string             `bson:"schooltag,omitempty" json:"schooltag,omitempty"`   // User School Tag
 	CreatedAt       time.Time          `bson:"createdAt,omitempty" json:"createdAt,omitempty"`   // CreatedAt Book
 	ModifiedAt      time.Time          `bson:"modifiedAt,omitempty" json:"modifiedAt,omitempty"` // ModifiedAt Book
 }

@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -21,7 +22,7 @@ type User struct {
 	Name       string             `bson:"name,omitempty" json:"name,omitempty"`             // User Name
 	Email      string             `bson:"email,omitempty" json:"email,omitempty"`           // User Email
 	Password   string             `bson:"password,omitempty" json:"password,omitempty"`     // User Password
-	SchoolTag  []string           `bson:"schooltag,omitempty" json:"schooltag,omitempty"`   // User School Tag
+	SchoolTag  string             `bson:"schooltag,omitempty" json:"schooltag,omitempty"`   // User School Tag
 	Read       []Book             `bson:"read,omitempty" json:"read,omitempty"`             // User Readed Books
 	Delivery   []Book             `bson:"delivery,omitempty" json:"delivery,omitempty"`     // User Delivery Books
 	Token      string             `json:"token" bson:"-"`                                   // User Token
@@ -79,6 +80,40 @@ func (user *User) Create(c interface{}) map[string]interface{} {
 	response["user"] = user
 	return response
 }
+func (user *User) CreateAdmin(c string) map[string]interface{} {
+	if c != os.Getenv("create_admin_token") {
+		return u.Message(false, "Token Not Found")
+	}
+	if resp, ok := user.Validate(); !ok {
+		return resp
+	}
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	user.Password = string(hashedPassword)
+	user.Read = []Book{}
+	user.Delivery = []Book{}
+	user.CreatedAt = time.Now()
+	user.ModifiedAt = time.Now()
+	user.Admin = true
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second) // Context for Create function
+	res, err := database.GetDB("user").InsertOne(ctx, user)            // Create Function
+	if err != nil {
+		return u.Message(false, "Failed to create account, connection error.")
+	}
+	out, err := json.Marshal(&res.InsertedID) // Convert the Json
+	if err != nil {
+		return u.Message(false, "Json Transform Problem.")
+	}
+	tk := &Token{UserId: string(out)}
+	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), tk)
+	tokenString, _ := token.SignedString([]byte(os.Getenv("token_password")))
+	user.Token = tokenString
+
+	user.Password = "" //delete password
+
+	response := u.Message(true, "Account has been created")
+	response["user"] = user
+	return response
+}
 
 func (user *User) Validate() (map[string]interface{}, bool) {
 
@@ -105,20 +140,25 @@ func (user *User) Validate() (map[string]interface{}, bool) {
 	return u.Message(false, "Requirement passed"), true
 }
 
-func Login(email, password string, c []string) map[string]interface{} {
+func Login(email, password string, c string) map[string]interface{} {
 
 	user := &User{}
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second) // Context for Serach
 	err := database.GetDB("user").FindOne(ctx, bson.M{"email": email}).Decode(&user)
-	if err != nil && err.Error() != "mongo: no documents in result" {
-		return u.Message(false, "Connection error. Please retry")
+	if err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			return u.Message(false, "Kullanici Bulunamadi")
+		}
+		return u.Message(false, "Baglantı Hatası. Daha Sonra Tekrar Deneyiniz.")
 	}
+
+	fmt.Println(user)
 	if user.Email == "" {
 		return u.Message(false, "Email address not found")
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
-		return u.Message(false, "Invalid login credentials. Please try again")
+		return u.Message(false, "Parola Yanlış")
 	}
 	//Worked! Logged In
 	user.Password = ""
@@ -129,7 +169,7 @@ func Login(email, password string, c []string) map[string]interface{} {
 
 	user.Password = "" //delete password
 
-	resp := u.Message(true, "Logged In")
+	resp := u.Message(true, "Giriş Başarılı")
 	resp["user"] = user
 	return resp
 }

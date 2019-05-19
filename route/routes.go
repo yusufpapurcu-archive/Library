@@ -17,11 +17,11 @@ var routes = models.Routes{ //Route List
 		HandlerFunc: CreateUser,
 	}, //Test Basarili
 	models.Route{
-		Name:        "Auth API",
-		Path:        "/api/user/auth",
+		Name:        "Create User API",
+		Path:        "/api/create/admin",
 		Method:      "Post",
-		HandlerFunc: Auth,
-	}, // Test Basarili
+		HandlerFunc: CreateAdmin,
+	}, //Test
 	models.Route{
 		Name:        "Find One User API",
 		Path:        "/api/user/getone",
@@ -65,13 +65,24 @@ var routes = models.Routes{ //Route List
 		Method:      "Post",
 		HandlerFunc: Deliver,
 	}, // Test Basarili
-
 	models.Route{
 		Name:        "Index",
 		Path:        "/",
 		Method:      "Get",
-		HandlerFunc: Empty,
+		HandlerFunc: Index,
 	},
+	models.Route{
+		Name:        "Login",
+		Path:        "/login",
+		Method:      "Get",
+		HandlerFunc: Login,
+	},
+	models.Route{
+		Name:        "Auth API",
+		Path:        "/api/user/auth",
+		Method:      "Post",
+		HandlerFunc: Auth,
+	}, // Test Basarili
 }
 
 // SetRouter Function for create Api End Points.

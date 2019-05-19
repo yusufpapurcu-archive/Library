@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/yusufpapurcu/Library/models"
 	u "github.com/yusufpapurcu/Library/utils"
@@ -22,6 +21,17 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	resp := user.Create(id) //Create account
 	u.Respond(w, resp)
 }
+func CreateAdmin(w http.ResponseWriter, r *http.Request) {
+	user := &models.User{}
+	err := json.NewDecoder(r.Body).Decode(user) //decode the request body into struct and failed if any error occur
+	if err != nil {
+		u.Respond(w, u.Message(false, "Invalid request"))
+		return
+	}
+	token := r.Header.Get("Authorization")
+	resp := user.CreateAdmin(token) //Create account
+	u.Respond(w, resp)
+}
 
 func Auth(w http.ResponseWriter, r *http.Request) {
 	user := &models.User{}
@@ -30,25 +40,9 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.Message(false, "Invalid request"))
 		return
 	}
-	c := r.Header.Get("SchoolTag")
-	if c == "" { //Token is missing, returns with error code 403 Unauthorized
-		response := u.Message(false, "Missing auth token")
-		w.WriteHeader(http.StatusForbidden)
-		w.Header().Add("Content-Type", "application/json")
-		u.Respond(w, response)
-		return
-	}
-
-	splitted := strings.Split(c, " ") //The token normally comes in format `Bearer {token-body}`, we check if the retrieved token matched this requirement
-	if len(splitted) != 2 {
-		response := u.Message(false, "Invalid/Malformed auth token")
-		w.WriteHeader(http.StatusForbidden)
-		w.Header().Add("Content-Type", "application/json")
-		u.Respond(w, response)
-		return
-	}
-	st := []string{splitted[0], splitted[1]}
-	resp := models.Login(user.Email, user.Password, st)
+	c := user.SchoolTag
+	fmt.Println(user.Password)
+	resp := models.Login(user.Email, user.Password, c)
 	u.Respond(w, resp)
 }
 

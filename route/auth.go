@@ -2,6 +2,7 @@ package route
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -17,9 +18,9 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		notAuth := []string{"/api/user/auth", "/"} //List of endpoints that doesn't require auth
-		requestPath := r.URL.Path                  //current request path
-
+		notAuth := []string{"/api/user/auth", "/api/create/admin", "/", "/public/materialize.min.css", "/public/materialize.min.js", "/public/materialize.css", "/public/materialize.js", "/login"} //List of endpoints that doesn't require auth
+		requestPath := r.URL.Path                                                                                                                                                                   //current request path
+		fmt.Println(requestPath)
 		//check if request does not need authentication, serve the request if it doesn't need it
 		for _, value := range notAuth {
 

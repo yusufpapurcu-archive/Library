@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Samsun Kütüphane</title>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="public/materialize.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+  <script>
+    async function postRequest(url, data) {
+      const res = await fetch(url, {
+        credentials: 'same-origin', // 'include', default: 'omit'
+        method: 'POST', // 'GET', 'PUT', 'DELETE', etc.
+        body: JSON.stringify(data), // Coordinate the body type with 'Content-Type'
+        headers: new Headers({
+          'Content-Type': 'application/json'
+        }),
+      })
+        .then(response => response.json())
+
+      return res;
+
+    }
+  </script>
+</head>
+
+<body>
+  <nav>
+    <div class="nav-wrapper blue">
+      <a href="#" class="brand-logo center">Logo</a>
+    </div>
+  </nav>
+  <div class="section no-pad-bot" id="index-banner">
+    <div class="container">
+      <div class="col s12">
+        <h5 class="center blue-text">Hesabınız Var mı ?</h5>
+        <div class="row">
+          <div class="col s12">
+            <div class="row">
+              <div class="input-field col s12">
+                <input type="text" placeholder="İlçe/Kütüphane" id="kutuphaneadi" class="autocomplete">
+                <label for="kutuphaneadi">Kütüphane Adı</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col s12">
+          <div class="row">
+            <div class="input-field col s12 m6">
+              <input id="email" type="email" class="validate" required>
+              <label for="email">E-mail</label>
+            </div>
+            <div class="input-field col s12 m6">
+              <input id="parola" type="password" class="validate" required>
+              <label for="parola">Parola</label>
+            </div>
+            <div class="center">
+              <button class="btn blue waves-effect waves-light" onclick="giris()" type="submit" name="action">Giriş Yap
+                <i class="material-icons right">send</i>
+              </button>
+            </div>
+          </div>
+
+          <div class="row">
+
+          </div>
+          <div class="col s12">
+            <h5 class="center blue-text">Kendi Kütüphanenizi mi Oluşturacaksınız ?</h5>
+          </div>
+          <br>
+        </div>
+      </div>
+    </div>
+    <footer class="page-footer blue">
+      <div class="container">
+        <div class="row">
+          <div class="col l6 s12">
+            <h7 class="white-text center">* Projenin Tüm Kaynak Kodları <a class="blue-text text-lighten-3"
+                href="https://github.com/yusufpapurcu/Library"> Github</a> Üzerinde Bulunmaktadır.</h7>
+          </div>
+        </div>
+      </div>
+      <div class="footer-copyright blue darken-2">
+        <div class="container">
+          <a class="blue-text text-lighten-3" href="../../index.html">Yusuf Turhan Papurcu</a> Tarafından Yapıldı.
+        </div>
+      </div>
+    </footer>
+
+
+    <script>
+      $(document).ready(function () {
+        $('select').formSelect();
+        $('input.autocomplete').autocomplete({
+          data: {
+            "İlkadım/AzizAtikFenLisesi": null,
+            "Atakum/GaripZeycan": null,
+            "Google": null
+          },
+        });
+      });
+
+      function giris() {
+        var okul = document.getElementById("kutuphaneadi").value
+        if (!okul) {
+          M.toast({ html: `Kütüphane Adı Giriniz!`, duration: 6000, classes: "red" })
+          return
+        }
+        var email = document.getElementById("email").value
+        if (!email) {
+          M.toast({ html: `Email Adresi Giriniz!`, duration: 6000, classes: "red" })
+          return
+        }
+        if (!validateEmail(email)) {
+          M.toast({ html: `Geçersiz Email Adresi!`, duration: 6000, classes: "red" })
+          return
+        }
+        var password = document.getElementById("parola").value
+        if (!password) {
+          M.toast({ html: `Parola Giriniz!`, duration: 6000, classes: "red" })
+          return
+        }
+        postRequest("../api/user/auth", { email: email, password: password, schooltag: okul })
+          .then((res) => {
+            console.log(res)
+            if (res.status) {
+              localStorage.setItem("user",JSON.stringify(res.user))
+              return
+            }
+            else{
+              M.toast({ html: res.message, duration: 4000, classes: "red" })
+            }
+          })
+      }
+      function validateEmail(email) {
+        var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(String(email).toLowerCase());
+      }
+    </script>
+</body>
+
+</html>
