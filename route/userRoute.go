@@ -41,7 +41,7 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := user.SchoolTag
-	fmt.Println(user.Password)
+	fmt.Println(user)
 	resp := models.Login(user.Email, user.Password, c)
 	u.Respond(w, resp)
 }

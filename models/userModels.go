@@ -141,10 +141,9 @@ func (user *User) Validate() (map[string]interface{}, bool) {
 }
 
 func Login(email, password string, c string) map[string]interface{} {
-
 	user := &User{}
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second) // Context for Serach
-	err := database.GetDB("user").FindOne(ctx, bson.M{"email": email}).Decode(&user)
+	err := database.GetDB("user").FindOne(ctx, bson.M{"email": email, "schooltag": c}).Decode(&user)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
 			return u.Message(false, "Kullanici Bulunamadi")
@@ -326,4 +325,18 @@ func (user User) UpdateForDeliver() error {
 		return err
 	}
 	return nil
+}
+
+func Admin(c string) (bool, error) {
+	id, err := primitive.ObjectIDFromHex(c)
+	if err != nil {
+		return false, err
+	}
+	user := &User{}
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second) // Context for Serach
+	err = database.GetDB("user").FindOne(ctx, bson.M{"_id": id}).Decode(&user)
+	if err != nil {
+		return false, err
+	}
+	return user.Admin, nil
 }

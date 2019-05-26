@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Samsun Kütüphane</title>
+
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="public/materialize.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    async function postRequest(url, data) {
+      const res = await fetch(url, {
+        credentials: 'same-origin', // 'include', default: 'omit'
+        method: 'POST', // 'GET', 'PUT', 'DELETE', etc.
+        body: JSON.stringify(data), // Coordinate the body type with 'Content-Type'
+        headers: new Headers({
+          'Content-Type': 'application/json'
+        }),
+      }).then(response => response.json())
+
+      return res;
+    }
+
+    window.onload = function () {
+      user = localStorage.getItem("user")
+      user = JSON.parse(user)
+      postRequest("http://localhost:8080/getpage", { token: user.token })
+        .then((res) => { 
+            document.body.innerHTML = res
+         })
+    }
+  </script>
+</head>
+
+<body>
+</body>
+
+</html>

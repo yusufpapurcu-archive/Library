@@ -22,9 +22,7 @@
         }),
       })
         .then(response => response.json())
-
       return res;
-
     }
   </script>
 </head>
@@ -100,7 +98,6 @@
           data: {
             "İlkadım/AzizAtikFenLisesi": null,
             "Atakum/GaripZeycan": null,
-            "Google": null
           },
         });
       });
@@ -130,7 +127,7 @@
             console.log(res)
             if (res.status) {
               localStorage.setItem("user",JSON.stringify(res.user))
-              return
+              window.location = "http://localhost:8080/main"
             }
             else{
               M.toast({ html: res.message, duration: 4000, classes: "red" })
